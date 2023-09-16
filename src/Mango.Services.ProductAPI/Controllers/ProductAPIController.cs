@@ -66,14 +66,44 @@ namespace Mango.Services.ProductAPI.Controllers
 
         [HttpPost]
         [Authorize(Roles = "ADMIN")]
-        public ResponseDTO Post([FromBody] ProductDto couponDTO)
+        public ResponseDTO Post(ProductDto ProductDto)
         {
             try
             {
-                Product Obj = _mapper.Map<Product>(couponDTO);
-                _db.Product.Add(Obj);
+                Product product = _mapper.Map<Product>(ProductDto);
+                _db.Product.Add(product);
                 _db.SaveChanges();
-                _response.Result = _mapper.Map<Product>(Obj);
+
+				if (ProductDto.Image != null)
+				{
+
+					string fileName = product.ProductId + Path.GetExtension(ProductDto.Image.FileName);
+					string filePath = @"wwwroot\ProductImages\" + fileName;
+
+					//I have added the if condition to remove the any image with same name if that exist in the folder by any change
+					var directoryLocation = Path.Combine(Directory.GetCurrentDirectory(), filePath);
+					FileInfo file = new FileInfo(directoryLocation);
+					if (file.Exists)
+					{
+						file.Delete();
+					}
+
+					var filePathDirectory = Path.Combine(Directory.GetCurrentDirectory(), filePath);
+					using (var fileStream = new FileStream(filePathDirectory, FileMode.Create))
+					{
+						ProductDto.Image.CopyTo(fileStream);
+					}
+					var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}{HttpContext.Request.PathBase.Value}";
+					product.ImageUrl = baseUrl + "/ProductImages/" + fileName;
+					product.ImageLocalPathUrl = filePath;
+				}
+				else
+				{
+					product.ImageUrl = "https://placehold.co/600x400";
+				}
+				_db.Product.Update(product);
+				_db.SaveChanges();
+				_response.Result = _mapper.Map<Product>(product);
             }
             catch (Exception ex)
             {
@@ -85,14 +115,39 @@ namespace Mango.Services.ProductAPI.Controllers
 
         [HttpPut]
         [Authorize(Roles = "ADMIN")]
-        public ResponseDTO put([FromBody] ProductDto productDTO)
+        public ResponseDTO put(ProductDto productDTO)
         {
             try
             {
-                Product Obj = _mapper.Map<Product>(productDTO);
-                _db.Product.Update(Obj);
+                Product product = _mapper.Map<Product>(productDTO);
+
+				if (productDTO.Image != null)
+				{
+					if (!string.IsNullOrEmpty(product.ImageLocalPathUrl))
+					{
+						var oldFilePathDirectory = Path.Combine(Directory.GetCurrentDirectory(), product.ImageLocalPathUrl);
+						FileInfo file = new FileInfo(oldFilePathDirectory);
+						if (file.Exists)
+						{
+							file.Delete();
+						}
+					}
+
+					string fileName = product.ProductId + Path.GetExtension(productDTO.Image.FileName);
+					string filePath = @"wwwroot\ProductImages\" + fileName;
+					var filePathDirectory = Path.Combine(Directory.GetCurrentDirectory(), filePath);
+					using (var fileStream = new FileStream(filePathDirectory, FileMode.Create))
+					{
+						productDTO.Image.CopyTo(fileStream);
+					}
+					var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}{HttpContext.Request.PathBase.Value}";
+					product.ImageUrl = baseUrl + "/ProductImages/" + fileName;
+					product.ImageLocalPathUrl = filePath;
+				}
+
+				_db.Product.Update(product);
                 _db.SaveChanges();
-                _response.Result = _mapper.Map<Product>(Obj);
+                _response.Result = _mapper.Map<Product>(product);
             }
             catch (Exception ex)
             {
@@ -110,7 +165,16 @@ namespace Mango.Services.ProductAPI.Controllers
             try
             {
                 Product? Obj = _db.Product.FirstOrDefault(p => p.ProductId == id);
-                _db.Product.Remove(Obj);
+				if (!string.IsNullOrEmpty(Obj.ImageLocalPathUrl))
+				{
+					var oldFilePathDirectory = Path.Combine(Directory.GetCurrentDirectory(), Obj.ImageLocalPathUrl);
+					FileInfo file = new FileInfo(oldFilePathDirectory);
+					if (file.Exists)
+					{
+						file.Delete();
+					}
+				}
+				_db.Product.Remove(Obj);
                 _db.SaveChanges();
                 _response.IsSucess = true;
                 _response.Message = "Record Deleted Successfuly";

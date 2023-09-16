@@ -43,7 +43,7 @@ namespace Mango.Web.Controllers
                 ResponseDto? response = await _productService.CreateProductsAsync(model);
                 if (response != null && response.IsSucess)
                 {
-                    TempData["success"] = response?.Message;
+                    TempData["success"] = "Product created successfully";
                     return RedirectToAction(nameof(ProductIndex));
                 }
                 else
@@ -105,10 +105,9 @@ namespace Mango.Web.Controllers
 		[HttpPost]
 		public async Task<IActionResult> ProductEdit(ProductDto productDto)
 		{
-            //if (ModelState.IsValid)
-            //{
-            productDto.ImageUrl = "qqewqweqe";
-				ResponseDto? response = await _productService.UpdateProductsAsync(productDto);
+            if (ModelState.IsValid)
+            {
+                ResponseDto? response = await _productService.UpdateProductsAsync(productDto);
 
 				if (response != null && response.IsSucess)
 				{
@@ -119,7 +118,7 @@ namespace Mango.Web.Controllers
 				{
 					TempData["error"] = response?.Message;
 				}
-			//}
+			}
 			return View(productDto);
 		}
 	}

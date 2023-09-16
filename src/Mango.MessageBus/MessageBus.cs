@@ -1,4 +1,5 @@
 ﻿using Azure.Messaging.ServiceBus;
+using Microsoft.Azure.Amqp.Framing;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Mango.MessageBus
 {
-    public class MessageBus : IMessageBus
+    public class MessageBus : IMessageBus  //this class is to push messagess to Azure Bus service
     {
         private string connectionString = "Endpoint=sb://mangowebmax.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=Xp6umFSQmN0MPwyls/Ax3PhBseRa7ZVcC+ASbOU2SYo=";
 

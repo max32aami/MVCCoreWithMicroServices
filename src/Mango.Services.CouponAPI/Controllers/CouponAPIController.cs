@@ -94,6 +94,17 @@ namespace Mango.Services.CouponAPI.Controllers
                 Coupon Obj = _mapper.Map<Coupon>(couponDTO);
                _db.Coupons.Add(Obj);
                 _db.SaveChanges();
+
+                var options = new Stripe.CouponCreateOptions
+                {
+                    AmountOff = (long)(couponDTO.DiscountAmount * 100),
+                    Name = couponDTO.CouponCode,
+                    Currency = "usd",
+                    Id = couponDTO.CouponCode,
+                };
+                var service = new Stripe.CouponService();
+                service.Create(options);
+
                 _response.Result = _mapper.Map<Coupon>(Obj);
             }
             catch (Exception ex)
@@ -133,6 +144,11 @@ namespace Mango.Services.CouponAPI.Controllers
                 Coupon? Obj = _db.Coupons.FirstOrDefault(p => p.CouponId == id);
                 _db.Coupons.Remove(Obj);
                 _db.SaveChanges();
+
+                var service = new Stripe.CouponService();
+                service.Delete(Obj.CouponCode);
+
+
                 _response.IsSucess=true;
                 _response.Message = "Record Deleted Successfuly";
             }
