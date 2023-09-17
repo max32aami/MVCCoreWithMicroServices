@@ -58,11 +58,14 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Coupon API");
+    c.RoutePrefix = string.Empty;
+
+});
 Stripe.StripeConfiguration.ApiKey = builder.Configuration.GetSection("Stripe:SecretKey").Get<string>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
@@ -77,7 +80,8 @@ void ApplyMigration()
     using (var scope = app.Services.CreateScope())
     {
         var _db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        if (_db.Database.GetAppliedMigrations().Count() > 0)
+
+        if (_db.Database.GetPendingMigrations().Count() > 0)
         {
             _db.Database.Migrate();
         }
