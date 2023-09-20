@@ -1,6 +1,7 @@
 using Mango.MessageBus;
 using Mango.Services.AuthAPI.Data;
 using Mango.Services.AuthAPI.Models;
+using Mango.Services.AuthAPI.RabbitMQSender;
 using Mango.Services.AuthAPI.Services;
 using Mango.Services.AuthAPI.Services.Iservices;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -25,6 +26,8 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IMessageBus, MessageBus>();
+builder.Services.AddScoped<IRabbitMQAuthMessageSender, RabbitMQAuthMessageSender>();
+
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -40,10 +43,11 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "AUTH API");
-    c.RoutePrefix = string.Empty;
-
+    if (!app.Environment.IsDevelopment())
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "AUTH API");
+        c.RoutePrefix = string.Empty;
+    }
 });
 
 //below are request pipeline

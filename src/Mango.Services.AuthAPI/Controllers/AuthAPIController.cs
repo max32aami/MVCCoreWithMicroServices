@@ -1,10 +1,12 @@
 ﻿using Azure;
 using Mango.MessageBus;
 using Mango.Services.AuthAPI.Models.DTO;
+using Mango.Services.AuthAPI.RabbitMQSender;
 using Mango.Services.AuthAPI.Services.Iservices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using System.Runtime.InteropServices;
 
 namespace Mango.Services.AuthAPI.Controllers
 {
@@ -16,14 +18,25 @@ namespace Mango.Services.AuthAPI.Controllers
         protected ResponseDto _response;
         private readonly IMessageBus _messageBus;
         private readonly IConfiguration _configuration;
-        public AuthAPIController(IAuthService authService, IMessageBus messageBus, IConfiguration configuration)
+         private readonly IRabbitMQAuthMessageSender _messageSender;
+        //public AuthAPIController(IAuthService authService, IMessageBus messageBus, IConfiguration configuration) //for AzureBus Service
+        //{
+
+        //    _authService = authService;
+        //    _configuration = configuration;
+        //    _messageBus = messageBus;
+        //    _response = new();
+        //}
+
+        public AuthAPIController(IAuthService authService, IMessageBus messageBus, IConfiguration configuration, IRabbitMQAuthMessageSender messageSender)
         {
 
             _authService = authService;
             _configuration = configuration;
             _messageBus = messageBus;
+            _messageSender = messageSender;
             _response = new();
-        }   
+        }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegistrationRequestsDto model)
@@ -38,7 +51,8 @@ namespace Mango.Services.AuthAPI.Controllers
             }
             else
             {
-                await _messageBus.PublishMessage(model.Email, _configuration.GetValue<string>("TopicAndQueueNames:RegisterUserQueue"));
+               await _messageBus.PublishMessage(model.Email, _configuration.GetValue<string>("TopicAndQueueNames:RegisterUserQueue"));
+               _messageSender.SendMessage(model.Email, _configuration.GetValue<string>("TopicAndQueueNames:RegisterUserQueue"));
                 return Ok(_response);
             }
         }
